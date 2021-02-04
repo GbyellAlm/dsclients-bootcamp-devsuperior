@@ -2,6 +2,8 @@ package com.gbyellalm.dsclients.service;
 
 import java.util.Optional;
 
+import javax.persistence.EntityNotFoundException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,13 +26,15 @@ public class ClientService {
 		Page<Client> list = repository.findAll(pageRequest);
 		return list.map(listElement -> new ClientDTO(listElement)); 
 	}
-
+	
+	@Transactional(readOnly = true)  
 	public ClientDTO findById(Long id) {
 		Optional<Client> obj = repository.findById(id);
 		Client entity = obj.orElseThrow(() -> new ResourceNotFoundException("Não é possível encontrar esse cliente"));
 		return new ClientDTO(entity);
 	}
-
+	
+	@Transactional
 	public ClientDTO insert(ClientDTO dto) {
 		Client entity = new Client();
 		entity.setName(dto.getName());
@@ -40,5 +44,23 @@ public class ClientService {
 		entity.setChildren(dto.getChildren());
 		entity = repository.save(entity);
 		return new ClientDTO(entity);
+	}
+
+	@Transactional
+	public ClientDTO update(Long id, ClientDTO dto) {
+		try {
+			Client entity = repository.getOne(id);
+			entity.setName(dto.getName());
+			entity.setCpf(dto.getCpf());
+			entity.setIncome(dto.getIncome());
+			entity.setBirthDate(dto.getBirthDate());
+			entity.setChildren(dto.getChildren());
+			entity = repository.save(entity);
+			entity = repository.save(entity);
+			return new ClientDTO(entity);
+		}
+		catch(EntityNotFoundException e) {
+			throw new ResourceNotFoundException("Não é possível atualizar esse cliente");
+		}
 	}
 }
